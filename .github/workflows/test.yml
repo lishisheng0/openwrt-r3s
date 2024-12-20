@@ -1,0 +1,34 @@
+name: test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up OpenWrt build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential ccache libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev unzip gawk
+
+    - name: Clone OpenWrt source code
+      working-directory: /workdir
+      run: |
+        git clone https://github.com/openwrt/openwrt -b v24.10.0-rc2 openwrt
+
+    - name: Copy .vermagic file to the OpenWrt build directory
+      working-directory: /workdir/openwrt
+      run: |
+        cp /workdir/.vermagic $(TOPDIR)/.vermagic
+
+    - name: Modify include/kernel-defaults.mk
+      working-directory: /workdir/openwrt
+      run: |
+        # 修改 include/kernel-defaults.mk 文件
+        sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
+        cat include/kernel-defaults.mk
